@@ -1,5 +1,7 @@
 const logger = require ('../config/logger.js');
+const sendToken = require('../utils/sendToken');
 const CustomError = require ('../utils/CustomError.js');
+const CustomSuccess = require ('../utils/CustomSuccess.js')
 
 const {
     registerUserController, 
@@ -11,13 +13,15 @@ const {
     resetPasswordController,
 } = require('../controllers/authController');
 
-const sendToken = require('../utils/sendToken');
 
 const registerUserHandler = async(req, res, next) => {
     const { documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role } = req.body;
     try {
         const result = await registerUserController({ documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role });
-        res.status(201).json(result);
+
+        logger.info('✅ Usuario registrado correctamente (verificación pendiente)');
+        next(new CustomSuccess(result.message, 201));
+
     } catch (error) {
         logger.error(`Error en registerUserHandler: ${error.message}`);
         next(error);
@@ -33,7 +37,9 @@ const activateUserHandler = async (req, res, next) => {
 
         const user = await activateUserController(activationToken);
 
+        logger.info('✅ Usuario activado correctamente');
         sendToken(user, 201, res);
+
     } catch (error) {
         logger.error(`Error en activateUserHandler: ${error.message}`);
         next(error);
@@ -43,28 +49,42 @@ const activateUserHandler = async (req, res, next) => {
 const loginUserHandler = async (req, res, next) => {
     try {
         const user = await loginUserController(req.body);
+
+        logger.info('✅ Usuario inició sesión correctamente');
         sendToken(user, 200, res);
+
     } catch (error) {
         logger.error(`Error en loginUserHandler: ${error.message}`);
         next(error);
     }
 };
 
-const logoutUserHandler = (req, res) => {
-    res.cookie('token', null, {
-        expires: new Date(Date.now()),
-        httpOnly:true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-    });
-    const result = logoutUserController();
-    res.status(200).json({success: true, ...result});
+const logoutUserHandler = (req, res, next) => {
+    try {
+        res.cookie('token', null, {
+            expires: new Date(Date.now()),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+        });
+
+        const result = logoutUserController();
+        logger.info('✅ Sesión cerrada correctamente');
+        next(new CustomSuccess(result.message, 200));
+
+    } catch (error) {
+        logger.error(`🔴 Error en logoutUserHandler: ${error.message}`);
+        next(error);
+    }
 };
 
 const refreshTokenHandler = async (req, res, next) => {
     try {
         const token = refreshTokenController(req);
-        res.status(200).json({success: true, token});
+
+        logger.info('✅ Token refrescado correctamente');
+        next(new CustomSuccess('Token refrescado correctamente', 200, { token }));
+
     } catch (error) {
         logger.error(`Error en refreshTokenHandler: ${error.message}`);
         next(error);
@@ -74,24 +94,30 @@ const refreshTokenHandler = async (req, res, next) => {
 const forgotPasswordHandler = async (req, res, next) => {
     try {
         const result = await forgotPasswordController(req.body.email);
-        res.status(200).json({success: true, ...result});
+
+        logger.info('✅ Correo de recuperación enviado');
+        next(new CustomSuccess(result.message, 200));
+
     } catch (error) {
-        logger.error(`Error en forgotPasswordHandler: ${error.message}`);
+        logger.error(`🔴 Error en forgotPasswordHandler: ${error.message}`);
         next(error);
     }
 };
 
 const resetPasswordHandler = async (req, res, next) => {
     try {
-        const {token} = req.params;
-        const {password} = req.body;
+        const { token } = req.params;
+        const { password } = req.body;
         const user = await resetPasswordController(token, password);
+
+        logger.info('✅ Contraseña restablecida correctamente');
         sendToken(user, 200, res);
+
     } catch (error) {
-        logger.error(`Error en resetPasswordHandler: ${error.message}`);
+        logger.error(`🔴 Error en resetPasswordHandler: ${error.message}`);
         next(error);
-    };
-}
+    }
+};
 
 module.exports = {
     registerUserHandler,

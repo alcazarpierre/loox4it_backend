@@ -4,6 +4,8 @@ const User = require ('../model/user.js');
 const sendMail = require ('../utils/sendMail.js');
 const sendToken = require ('../utils/sendToken.js');
 const generateActivationToken = require ('../utils/generateActivationToken.js');
+const CustomError = require('../utils/CustomError.js');
+const logger = require('../config/logger.js');
 
 const registerUserController = async (userData) => {
     const { documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role } = userData;
@@ -17,7 +19,8 @@ const registerUserController = async (userData) => {
     const activationToken = generateActivationToken({ documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role });
 
     if (process.env.NODE_ENV === 'development') {
-        console.log(`🔑 Token de activación: ${activationToken}`);}
+        logger.debug(`🔑 Token de activación generado: ${activationToken}`);
+    }
 
     const activationUrl = `${process.env.CLIENT_URL}/activate/${activationToken}`;
 
@@ -26,37 +29,33 @@ const registerUserController = async (userData) => {
         subject: 'Verifica tu cuenta',
         message: `Hola ${firstName}, por favor verifica tu cuenta haciendo clic en el siguiente enlace: <a href=${activationUrl}>Verificar cuenta</a>`,
     });
+
     return {
-        success: true,
         message: 'Usuario creado correctamente, por favor verifica tu cuenta en tu correo electrónico'
     };
 };
 
 const activateUserController = async (activationToken) => {
-    //const newUserData = jwt.verify(token, process.env.JWT_SECRET);
-
-    let newUserData;
     try {
-    newUserData = jwt.verify(activationToken, process.env.ACTIVATION_SECRET);
+        const newUserData = jwt.verify(activationToken, process.env.ACTIVATION_SECRET);
+        const { documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role } = newUserData;
+
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            throw new CustomError('La cuenta ya fue activada previamente.', 400);
+        }
+
+        const user = await User.create({ documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role });
+        return user;
+
     } catch (err) {
-    throw new CustomError('Token inválido o expirado', 400);
+        throw new CustomError('Token inválido o expirado', 400);
     }
-    
-    const {documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role} = newUserData;
-
-    const userExists = await User.findOne({email});
-    if (userExists) {
-        throw new CustomError('La cuenta ya fue activada previamente.', 400);
-    }
-
-    const user = await User.create({documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role});
-    
-    return user;
-
 };
 
 const loginUserController = async ({email, password}) => {
     const user = await User.findOne({email}).select('+password');
+    
     if (!user || !(await user.comparePassword(password))) {
         throw new CustomError('Credenciales Inválidas', 401);
     }
