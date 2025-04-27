@@ -2,9 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const mainRouter = require('./routes/mainRouter.js');
 const cookieParser = require('cookie-parser');
 const logger = require('./config/logger.js');
-const fileUpload = require('express-fileupload');
+const errorHandler = require('./middleware/errorHandler.js');
 
 const app = express();
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -34,11 +35,7 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(fileUpload({
-  useTempFiles: true,
-  tempFileDir: '/tmp/',
-  createParentPath: true
-}));
+
 
 // Logging con Morgan (según entorno)
 if (NODE_ENV === 'development') {
@@ -47,15 +44,8 @@ if (NODE_ENV === 'development') {
   app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
 }
 
-// Middleware de manejo de errores
-app.use((err, req, res, next) => {
-  logger.error(`Error: ${err.message}`);
+app.use(mainRouter);
 
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal Server Error',
-    ...(NODE_ENV === 'development' && { stack: err.stack }) // Solo en desarrollo
-  });
-});
+app.use(errorHandler);
 
 module.exports = app;
