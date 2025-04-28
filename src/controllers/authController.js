@@ -82,7 +82,9 @@ const refreshTokenController = (req) => {
 
 const forgotPasswordController = async (email) => {
     const user = await User.findOne({email});
-    if (!user) throw new CustomError('Usuario no encontrado', 400);
+    if (!user) {
+        throw new CustomError('Usuario no encontrado', 400);
+    }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
@@ -100,8 +102,15 @@ const forgotPasswordController = async (email) => {
         message: `<p>Haz clic en el siguiente enlace para restablecer tu contraseña: <a href="${resetUrl}">${resetUrl}</a></p>`
     });
 
+      // Mostrar en consola si está en modo development
+    if (process.env.NODE_ENV === 'development') {
+    console.log('🔑 Password reset token (dev mode):', resetToken);
+    console.log('🔗 Password reset URL (dev mode):', resetUrl);
+    }
+
     return {
-        message: 'Correo enviado correctamente'
+        message: 'Correo enviado correctamente',
+        data: process.env.NODE_ENV === 'development' ? { resetToken } : {}
     };
 
 };

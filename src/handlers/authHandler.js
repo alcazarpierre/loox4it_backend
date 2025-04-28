@@ -96,7 +96,7 @@ const forgotPasswordHandler = async (req, res, next) => {
         const result = await forgotPasswordController(req.body.email);
 
         logger.info('✅ Correo de recuperación enviado');
-        next(new CustomSuccess(result.message, 200));
+        next(new CustomSuccess(result.message, 200, result.data));
 
     } catch (error) {
         logger.error(`🔴 Error en forgotPasswordHandler: ${error.message}`);
@@ -107,8 +107,8 @@ const forgotPasswordHandler = async (req, res, next) => {
 const resetPasswordHandler = async (req, res, next) => {
     try {
         const { token } = req.params;
-        const { password } = req.body;
-        const user = await resetPasswordController(token, password);
+        const { newPassword } = req.body;
+        const user = await resetPasswordController(token, newPassword);
 
         logger.info('✅ Contraseña restablecida correctamente');
         sendToken(user, 200, res);
