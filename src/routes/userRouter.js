@@ -6,7 +6,7 @@ const {
     updateUserHandler,
     deleteUserHandler,
     softDeleteUserHandler,
-    getAllUserHandler,
+    getAllUsersHandler,
     getUserByIdHandler
 
 } = require('../handlers/userHandler.js');
@@ -18,7 +18,7 @@ userRouter.get('/profile', getUserProfileHandler);
 userRouter.put('/update', updateUserHandler);
 userRouter.delete('/delete/:id', deleteUserHandler);
 userRouter.patch('/soft-delete/:id', softDeleteUserHandler);
-userRouter.get('/all', getAllUserHandler);
+userRouter.get('/all', getAllUsersHandler);
 userRouter.get('/:id', getUserByIdHandler);
 
 module.exports = userRouter;

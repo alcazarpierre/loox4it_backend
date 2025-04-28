@@ -20,7 +20,7 @@ const registerUserHandler = async(req, res, next) => {
         const result = await registerUserController({ documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role });
 
         logger.info('✅ Usuario registrado correctamente (verificación pendiente)');
-        next(new CustomSuccess(result.message, 201));
+        next(new CustomSuccess(result.message, 201, process.env.NODE_ENV === 'development' ? { activationToken: result.activationToken } : {}));
 
     } catch (error) {
         logger.error(`Error en registerUserHandler: ${error.message}`);

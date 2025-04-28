@@ -10,7 +10,6 @@ const logger = require('../config/logger.js');
 const registerUserController = async (userData) => {
     const { documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role } = userData;
 
-    // Check if the user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
         throw new CustomError('El usuario ya existe', 400);
@@ -20,6 +19,7 @@ const registerUserController = async (userData) => {
 
     if (process.env.NODE_ENV === 'development') {
         logger.debug(`🔑 Token de activación generado: ${activationToken}`);
+        console.log(`Token para activar la cuenta: ${activationToken}`);
     }
 
     const activationUrl = `${process.env.CLIENT_URL}/activate/${activationToken}`;
@@ -31,7 +31,8 @@ const registerUserController = async (userData) => {
     });
 
     return {
-        message: 'Usuario creado correctamente, por favor verifica tu cuenta en tu correo electrónico'
+        message: 'Usuario creado correctamente, por favor verifica tu cuenta en tu correo electrónico',
+        ...(process.env.NODE_ENV === 'development' && { activationToken }) // <- 🔥
     };
 };
 
