@@ -32,7 +32,14 @@ const updateUserController = async (userId, userData) => {
         throw new CustomError('Usuario no encontrado', 404);
     }
 
-    Object.assign(user, userData);
+    const allowedFields = ['firstName', 'lastName', 'phone', 'email', 'avatar'];
+
+    allowedFields.forEach(field => {
+        if (userData[field] !== undefined) {
+            user[field] = userData[field];
+        }
+    });
+
     await user.save();
     logger.info(`Usuario actualizado: ${userId}`);
     return new CustomSuccess('Usuario actualizado correctamente', 200, user);
@@ -45,7 +52,9 @@ const softDeleteUserController = async (userId) => {
         throw new CustomError('Usuario no encontrado', 404);
     }
 
-    user.isActive = false;  // Desactivando al usuario
+    user.isActive = false;
+    user.isDeleted = true;
+
     await user.save();
     logger.info(`Usuario desactivado correctamente: ${userId}`);
     return new CustomSuccess('Usuario desactivado correctamente', 200, user);
@@ -64,7 +73,7 @@ const deleteUserController = async (userId) => {
 };
 
 const getAllUsersController = async () => {
-    const users = await User.find({ isActive: true });
+    const users = await User.find({ isActive: true, isDeleted: false });
     logger.info(`Obtención de todos los usuarios activos: ${users.length} usuarios encontrados`);
     return new CustomSuccess('Usuarios obtenidos correctamente', 200, users);
 };

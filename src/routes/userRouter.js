@@ -1,4 +1,5 @@
 const {Router} = require('express');
+const authMiddleware = require('../middleware/auth.js');
 
 const {
     createUserHandler,
@@ -18,7 +19,7 @@ userRouter.get('/profile', getUserProfileHandler);
 userRouter.put('/update', updateUserHandler);
 userRouter.delete('/delete/:id', deleteUserHandler);
 userRouter.patch('/soft-delete/:id', softDeleteUserHandler);
-userRouter.get('/all', getAllUsersHandler);
-userRouter.get('/:id', getUserByIdHandler);
+userRouter.get('/all', authMiddleware, getAllUsersHandler);
+userRouter.get('/:id', authMiddleware, getUserByIdHandler);
 
 module.exports = userRouter;
