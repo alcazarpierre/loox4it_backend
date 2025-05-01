@@ -38,7 +38,7 @@ const activateUserHandler = async (req, res, next) => {
         const user = await activateUserController(activationToken);
 
         logger.info('✅ Usuario activado correctamente');
-        sendToken(user, 201, res);
+        sendToken(user, user.isNew? 201 : 200, res);
 
     } catch (error) {
         logger.error(`Error en activateUserHandler: ${error.message}`);

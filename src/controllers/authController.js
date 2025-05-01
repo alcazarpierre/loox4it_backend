@@ -22,7 +22,7 @@ const registerUserController = async (userData) => {
         console.log(`Token para activar la cuenta: ${activationToken}`);
     }
 
-    const activationUrl = `${process.env.CLIENT_URL}/activate/${activationToken}`;
+    const activationUrl = `${process.env.CLIENT_URL}/activation/${activationToken}`;
 
     await sendMail({
         email,
@@ -43,9 +43,10 @@ const activateUserController = async (activationToken) => {
 
         const userExists = await User.findOne({ email });
         if (userExists) {
-            throw new CustomError('La cuenta ya fue activada previamente.', 400);
+            logger.info('ℹ️ La cuenta ya estaba activada.');
+            return userExists;
         }
-
+        
         const user = await User.create({ documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role });
         return user;
 
