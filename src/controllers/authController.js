@@ -44,7 +44,7 @@ const activateUserController = async (activationToken) => {
         const userExists = await User.findOne({ email });
         if (userExists) {
             logger.info('ℹ️ La cuenta ya estaba activada.');
-            return userExists;
+            throw new CustomError('La cuenta ya fue activada previamente.', 400);
         }
         
         const user = await User.create({ documentType, documentNumber, firstName, lastName, email, phone, password, avatar, role });
